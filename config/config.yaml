@@ -1,0 +1,12 @@
+app:
+  name: "playground-go-websocket"
+  echoPort: "8081"
+  ginPort: "8082"
+  version: "1.0.0"
+  trustProxies:
+    - "127.0.0.1"
+
+log:
+  level: "debug"
+
+
