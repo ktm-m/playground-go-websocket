@@ -29,3 +29,6 @@ Thumbs.db
 # Build directories
 bin/
 build/
+
+# Environment variables
+config/
