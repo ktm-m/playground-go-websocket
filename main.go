@@ -1,12 +1,14 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 	"github.com/ktm-m/playground-go-websocket/constant"
 	"github.com/ktm-m/playground-go-websocket/handler"
 	"github.com/ktm-m/playground-go-websocket/infra"
 	"github.com/ktm-m/playground-go-websocket/internal/service"
+	"github.com/labstack/echo/v4"
 	"sync"
 )
 
@@ -26,9 +28,15 @@ func main() {
 	handlers := handler.NewHandler(services.ProcessMessageService, &upgrader, socketIOServer)
 
 	echoServer := echoFactory.CreateServer()
-	echoServer.AddHandler(handlers.EchoWebSocketHandler)
+
+	echoWebSocketHandler := handlers.EchoWebSocketHandler
+	echoWebSocketHandler.RegisterRoutes(echoServer.GetInstance().(*echo.Echo))
+	echoServer.AddHandler(echoWebSocketHandler)
 
 	ginServer := ginFactory.CreateServer()
+
+	ginWebSocketHandler := handlers.GinWebSocketHandler
+	ginWebSocketHandler.RegisterRoutes(ginServer.GetInstance().(*gin.Engine))
 	ginServer.AddHandler(handlers.GinWebSocketHandler)
 
 	servers := []infra.HTTPServer{

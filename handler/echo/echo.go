@@ -25,9 +25,6 @@ func (h *echoWebSocketHandler) RegisterRoutes(e *echo.Echo) {
 	group := e.Group("/echo")
 	group.GET("/gorilla-mux", h.EchoGorillaMuxWebSocket)
 	group.GET("/socket-io", h.EchoSocketIOWebSocket)
-	group.GET("/test", func(c echo.Context) error {
-		return c.String(200, "test")
-	})
 }
 
 func NewEchoWebSocketHandler(processMessageService inbound.ProcessMessagePort, upgrader *websocket.Upgrader, socketIO *socketio.Server) outbound.EchoWebSocketHandlerPort {

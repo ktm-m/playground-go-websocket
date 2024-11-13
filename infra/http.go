@@ -22,6 +22,7 @@ type HTTPServer interface {
 	Shutdown(ctx context.Context)
 	Info() string
 	AddHandler(handler ...interface{})
+	GetInstance() interface{}
 }
 
 type HTTPServerFactory interface {
@@ -214,6 +215,14 @@ func (gs *GinServer) setupHealthEndpoint() {
 			"version": gs.config.Version,
 		})
 	})
+}
+
+func (es *EchoServer) GetInstance() interface{} {
+	return es.echo
+}
+
+func (gs *GinServer) GetInstance() interface{} {
+	return gs.gin
 }
 
 func ListenForShutdown(servers []HTTPServer) {
