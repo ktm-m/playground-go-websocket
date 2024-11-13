@@ -28,16 +28,10 @@ func main() {
 	handlers := handler.NewHandler(services.ProcessMessageService, &upgrader, socketIOServer)
 
 	echoServer := echoFactory.CreateServer()
-
-	echoWebSocketHandler := handlers.EchoWebSocketHandler
-	echoWebSocketHandler.RegisterRoutes(echoServer.GetInstance().(*echo.Echo))
-	echoServer.AddHandler(echoWebSocketHandler)
+	registerEchoHandlers(echoServer, handlers)
 
 	ginServer := ginFactory.CreateServer()
-
-	ginWebSocketHandler := handlers.GinWebSocketHandler
-	ginWebSocketHandler.RegisterRoutes(ginServer.GetInstance().(*gin.Engine))
-	ginServer.AddHandler(handlers.GinWebSocketHandler)
+	registerGinHandlers(ginServer, handlers)
 
 	servers := []infra.HTTPServer{
 		echoServer,
@@ -55,6 +49,18 @@ func main() {
 
 	go infra.ListenForShutdown(servers)
 	wg.Wait()
+}
+
+func registerEchoHandlers(server infra.HTTPServer, handlers *handler.Handler) {
+	echoWebSocketHandler := handlers.EchoWebSocketHandler
+	echoWebSocketHandler.RegisterRoutes(server.GetInstance().(*echo.Echo))
+	server.AddHandler(echoWebSocketHandler)
+}
+
+func registerGinHandlers(server infra.HTTPServer, handlers *handler.Handler) {
+	ginWebSocketHandler := handlers.GinWebSocketHandler
+	ginWebSocketHandler.RegisterRoutes(server.GetInstance().(*gin.Engine))
+	server.AddHandler(ginWebSocketHandler)
 }
 
 //http.HandleFunc("/chat", func(w http.ResponseWriter, r *http.Request) {
