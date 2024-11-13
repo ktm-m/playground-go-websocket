@@ -5,6 +5,9 @@ app:
   version: "1.0.0"
   trustProxies:
     - "127.0.0.1"
+  upgrader:
+    readBufferSize: 1024
+    writeBufferSize: 1024
 
 log:
   level: "debug"

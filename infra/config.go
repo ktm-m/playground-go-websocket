@@ -23,10 +23,16 @@ type App struct {
 	GinPort      string
 	Version      string
 	TrustProxies []string
+	Upgrader     Upgrader
 }
 
 type Log struct {
 	Level string
+}
+
+type Upgrader struct {
+	ReadBufferSize  int
+	WriteBufferSize int
 }
 
 func InitConfig() *AppConfig {

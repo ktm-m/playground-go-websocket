@@ -8,6 +8,7 @@ import (
 	"github.com/ktm-m/playground-go-websocket/constant"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,6 +21,7 @@ type HTTPServer interface {
 	Start()
 	Shutdown(ctx context.Context)
 	Info() string
+	AddHandler(handler ...interface{})
 }
 
 type HTTPServerFactory interface {
@@ -27,16 +29,26 @@ type HTTPServerFactory interface {
 }
 
 type EchoServer struct {
-	echo   *echo.Echo
-	config *App
-	once   sync.Once
+	echo          *echo.Echo
+	config        *App
+	routeHandlers []EchoRouteHandler
+	once          sync.Once
 }
 
 type GinServer struct {
-	gin    *gin.Engine
-	config *App
-	server *http.Server
-	once   sync.Once
+	gin           *gin.Engine
+	config        *App
+	server        *http.Server
+	routeHandlers []GinRouteHandler
+	once          sync.Once
+}
+
+type EchoRouteHandler interface {
+	RegisterRoutes(e *echo.Echo)
+}
+
+type GinRouteHandler interface {
+	RegisterRoutes(e *gin.Engine)
 }
 
 type EchoServerFactory struct {
@@ -54,9 +66,11 @@ func (esf *EchoServerFactory) CreateServer() HTTPServer {
 		config: esf.config,
 	}
 	echoServer.setupMiddleware()
-	echoServer.echo.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	echoServer.setupHealthEndpoint()
+
+	for _, handler := range echoServer.routeHandlers {
+		handler.RegisterRoutes(echoInstance)
+	}
 
 	return echoServer
 }
@@ -79,9 +93,11 @@ func (gsf *GinServerFactory) CreateServer() HTTPServer {
 		},
 	}
 	ginServer.setupMiddleware()
-	ginServer.gin.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	ginServer.setupHealthEndpoint()
+
+	for _, handler := range ginServer.routeHandlers {
+		handler.RegisterRoutes(ginInstance)
+	}
 
 	return ginServer
 }
@@ -104,6 +120,10 @@ func (es *EchoServer) Start() {
 		es.echo.HideBanner = true
 		es.echo.HidePort = true
 
+		for _, route := range es.echo.Routes() {
+			log.Printf("[ECHO] %s:%s", route.Method, route.Path)
+		}
+
 		if err := es.echo.Start(addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic("[INFRA] failed to start echo server")
 		}
@@ -112,6 +132,10 @@ func (es *EchoServer) Start() {
 
 func (gs *GinServer) Start() {
 	gs.once.Do(func() {
+		for _, route := range gs.gin.Routes() {
+			log.Printf("[GIN] %s:%s", route.Method, route.Path)
+		}
+
 		if err := gs.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic("[INFRA] failed to start gin server")
 		}
@@ -138,18 +162,30 @@ func (gs *GinServer) Info() string {
 	return fmt.Sprintf("[INFRA] gin server is running on port %s", gs.config.GinPort)
 }
 
+func (es *EchoServer) AddHandler(handler ...interface{}) {
+	for _, h := range handler {
+		if routeHandler, ok := h.(EchoRouteHandler); ok {
+			es.routeHandlers = append(es.routeHandlers, routeHandler)
+		} else {
+			panic("[INFRA] invalid handler type for echo server")
+		}
+	}
+}
+
+func (gs *GinServer) AddHandler(handler ...interface{}) {
+	for _, h := range handler {
+		if routeHandler, ok := h.(GinRouteHandler); ok {
+			gs.routeHandlers = append(gs.routeHandlers, routeHandler)
+		} else {
+			panic("[INFRA] invalid handler type for gin server")
+		}
+	}
+}
+
 func (es *EchoServer) setupMiddleware() {
 	es.echo.Use(
 		middleware.Recover(),
 		middleware.Logger(),
-		func(next echo.HandlerFunc) echo.HandlerFunc {
-			return func(c echo.Context) error {
-				if c.Request().RequestURI == "/favicon.ico" {
-					return c.NoContent(http.StatusNoContent)
-				}
-				return next(c)
-			}
-		},
 	)
 }
 
@@ -157,13 +193,27 @@ func (gs *GinServer) setupMiddleware() {
 	gs.gin.Use(
 		gin.Recovery(),
 		gin.Logger(),
-		func(c *gin.Context) {
-			if c.Request.RequestURI == "/favicon.ico" {
-				c.AbortWithStatus(http.StatusNoContent)
-				return
-			}
-			c.Next()
+	)
+}
+
+func (es *EchoServer) setupHealthEndpoint() {
+	es.echo.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, echo.Map{
+			"name":    es.config.Name,
+			"port":    es.config.EchoPort,
+			"version": es.config.Version,
 		})
+	})
+}
+
+func (gs *GinServer) setupHealthEndpoint() {
+	gs.gin.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"name":    gs.config.Name,
+			"port":    gs.config.GinPort,
+			"version": gs.config.Version,
+		})
+	})
 }
 
 func ListenForShutdown(servers []HTTPServer) {
