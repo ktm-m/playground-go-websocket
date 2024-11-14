@@ -25,8 +25,10 @@ WORKDIR /app
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /app/main .
 
+# Copy the config directory
 COPY --from=builder /app/config ./config
 
+# Copy the html directory
 COPY --from=builder /app/html ./html
 
 # Expose port 8081 and 8082 to the outside world
