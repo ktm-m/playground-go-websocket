@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/ktm-m/playground-go-websocket/constant"
 	"github.com/ktm-m/playground-go-websocket/handler"
+	"github.com/ktm-m/playground-go-websocket/helper"
 	"github.com/ktm-m/playground-go-websocket/infra"
 	"github.com/ktm-m/playground-go-websocket/internal/service"
 	"github.com/labstack/echo/v4"
@@ -28,8 +29,10 @@ func main() {
 	}
 	socketIOServer := socketio.NewServer(nil)
 
+	muxWebSocketHelper := helper.NewMuxWebSocketHelper()
+
 	services := service.NewService()
-	handlers := handler.NewHandler(services.ProcessMessageService, &upgrader, socketIOServer)
+	handlers := handler.NewHandler(services.ProcessMessageService, &upgrader, socketIOServer, muxWebSocketHelper)
 
 	echoServer := echoFactory.CreateServer()
 	registerEchoHandlers(echoServer, handlers)

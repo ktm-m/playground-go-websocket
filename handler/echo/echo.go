@@ -4,6 +4,7 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 	"github.com/ktm-m/playground-go-websocket/constant"
+	"github.com/ktm-m/playground-go-websocket/helper"
 	"github.com/ktm-m/playground-go-websocket/internal/port/inbound"
 	"github.com/ktm-m/playground-go-websocket/internal/port/outbound"
 	"github.com/labstack/echo/v4"
@@ -20,6 +21,7 @@ type handler struct {
 	processMessageService inbound.ProcessMessagePort
 	upgrader              *websocket.Upgrader
 	socketIO              *socketio.Server
+	muxWebSocketHelper    helper.MuxWebSocketHelper
 }
 
 func (h *handler) RegisterRoutes(e *echo.Echo) {
@@ -29,11 +31,17 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	group.GET("/socket-io", h.SocketIOWebSocket)
 }
 
-func NewHandler(processMessageService inbound.ProcessMessagePort, upgrader *websocket.Upgrader, socketIO *socketio.Server) outbound.EchoWebSocketHandlerPort {
+func NewHandler(
+	processMessageService inbound.ProcessMessagePort,
+	upgrader *websocket.Upgrader,
+	socketIO *socketio.Server,
+	muxWebSocketHelper helper.MuxWebSocketHelper,
+) outbound.EchoWebSocketHandlerPort {
 	return &handler{
 		processMessageService: processMessageService,
 		upgrader:              upgrader,
 		socketIO:              socketIO,
+		muxWebSocketHelper:    muxWebSocketHelper,
 	}
 }
 
@@ -42,7 +50,7 @@ func (h *handler) ServeHTML(c echo.Context) error {
 }
 
 func (h *handler) GorillaMuxWebSocket(c echo.Context) error {
-	conn, err := h.upgradeConnection(h.upgrader, c)
+	conn, err := h.muxWebSocketHelper.UpgradeConnection(h.upgrader, c)
 	if err != nil {
 		log.Println("[HANDLER] failed to upgrade connection:", err)
 	}
@@ -53,8 +61,8 @@ func (h *handler) GorillaMuxWebSocket(c echo.Context) error {
 		}
 	}(conn)
 
-	h.addClient(conn)
-	defer h.removeClient(conn)
+	h.muxWebSocketHelper.AddClient(&mu, conn, clients)
+	defer h.muxWebSocketHelper.RemoveClient(&mu, conn, clients)
 
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -69,7 +77,7 @@ func (h *handler) GorillaMuxWebSocket(c echo.Context) error {
 			return nil
 		}
 
-		h.broadcastMessage([]byte(resp), clients)
+		h.muxWebSocketHelper.BroadCastMessage(&mu, []byte(resp), clients)
 	}
 }
 
@@ -87,41 +95,4 @@ func (h *handler) SocketIOWebSocket(c echo.Context) error {
 
 	h.socketIO.ServeHTTP(c.Response(), c.Request())
 	return nil
-}
-
-func (h *handler) upgradeConnection(upgrader *websocket.Upgrader, c echo.Context) (*websocket.Conn, error) {
-	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
-	if err != nil {
-		log.Println("[HANDLER] failed to upgrade connection:", err)
-		return nil, err
-	}
-
-	return conn, nil
-}
-
-func (h *handler) addClient(conn *websocket.Conn) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	clients[conn] = struct{}{}
-}
-
-func (h *handler) removeClient(conn *websocket.Conn) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	delete(clients, conn)
-}
-
-func (h *handler) broadcastMessage(msg []byte, clients map[*websocket.Conn]struct{}) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	for conn := range clients {
-		err := conn.WriteMessage(websocket.TextMessage, msg)
-		if err != nil {
-			log.Println("[HANDLER] failed to write message:", err)
-			continue
-		}
-	}
 }
