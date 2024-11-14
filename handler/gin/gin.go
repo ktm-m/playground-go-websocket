@@ -2,7 +2,6 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 	"github.com/ktm-m/playground-go-websocket/constant"
 	"github.com/ktm-m/playground-go-websocket/helper"
@@ -20,26 +19,22 @@ var (
 type handler struct {
 	processMessageService inbound.ProcessMessagePort
 	upgrader              *websocket.Upgrader
-	socketIO              *socketio.Server
 	muxWebSocketHelper    helper.MuxWebSocketHelper
 }
 
 func (h *handler) RegisterRoutes(e *gin.Engine) {
 	group := e.Group("/gin")
 	group.GET("/gorilla-mux", h.GorillaMuxWebSocket)
-	group.GET("/socket-io", h.SocketIOWebSocket)
 }
 
 func NewHandler(
 	processMessageService inbound.ProcessMessagePort,
 	upgrader *websocket.Upgrader,
-	socketIO *socketio.Server,
 	muxWebSocketHelper helper.MuxWebSocketHelper,
 ) outbound.GinWebSocketHandlerPort {
 	return &handler{
 		processMessageService: processMessageService,
 		upgrader:              upgrader,
-		socketIO:              socketIO,
 		muxWebSocketHelper:    muxWebSocketHelper,
 	}
 }
@@ -76,19 +71,4 @@ func (h *handler) GorillaMuxWebSocket(c *gin.Context) {
 
 		h.muxWebSocketHelper.BroadCastMessage(&mu, []byte(resp), clients)
 	}
-}
-
-func (h *handler) SocketIOWebSocket(c *gin.Context) {
-	h.socketIO.OnEvent("/", "message", func(conn socketio.Conn, msg string) {
-		resp, err := h.processMessageService.ProcessMessage(msg, constant.GinServer)
-		if err != nil {
-			log.Println("[HANDLER] failed to process message:", err)
-			conn.Emit("error", err)
-			return
-		}
-
-		conn.Emit("message", resp)
-	})
-
-	h.socketIO.ServeHTTP(c.Writer, c.Request)
 }

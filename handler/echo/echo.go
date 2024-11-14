@@ -1,7 +1,6 @@
 package echo
 
 import (
-	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 	"github.com/ktm-m/playground-go-websocket/constant"
 	"github.com/ktm-m/playground-go-websocket/helper"
@@ -20,7 +19,6 @@ var (
 type handler struct {
 	processMessageService inbound.ProcessMessagePort
 	upgrader              *websocket.Upgrader
-	socketIO              *socketio.Server
 	muxWebSocketHelper    helper.MuxWebSocketHelper
 }
 
@@ -28,19 +26,16 @@ func (h *handler) RegisterRoutes(e *echo.Echo) {
 	group := e.Group("/echo")
 	group.GET("/html", h.ServeHTML)
 	group.GET("/gorilla-mux", h.GorillaMuxWebSocket)
-	group.GET("/socket-io", h.SocketIOWebSocket)
 }
 
 func NewHandler(
 	processMessageService inbound.ProcessMessagePort,
 	upgrader *websocket.Upgrader,
-	socketIO *socketio.Server,
 	muxWebSocketHelper helper.MuxWebSocketHelper,
 ) outbound.EchoWebSocketHandlerPort {
 	return &handler{
 		processMessageService: processMessageService,
 		upgrader:              upgrader,
-		socketIO:              socketIO,
 		muxWebSocketHelper:    muxWebSocketHelper,
 	}
 }
@@ -79,21 +74,4 @@ func (h *handler) GorillaMuxWebSocket(c echo.Context) error {
 
 		h.muxWebSocketHelper.BroadCastMessage(&mu, []byte(resp), clients)
 	}
-}
-
-func (h *handler) SocketIOWebSocket(c echo.Context) error {
-	h.socketIO.OnEvent("/", "message", func(conn socketio.Conn, msg string) {
-		resp, err := h.processMessageService.ProcessMessage(msg, constant.EchoServer)
-		if err != nil {
-			log.Println("[HANDLER] failed to process message:", err)
-			conn.Emit("error", err)
-			return
-		}
-
-		conn.Emit("message", resp)
-	})
-
-	h.socketIO.ServeHTTP(c.Response(), c.Request())
-
-	return nil
 }

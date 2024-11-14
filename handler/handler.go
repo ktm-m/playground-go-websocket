@@ -1,7 +1,6 @@
 package handler
 
 import (
-	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 	"github.com/ktm-m/playground-go-websocket/handler/echo"
 	"github.com/ktm-m/playground-go-websocket/handler/gin"
@@ -18,11 +17,10 @@ type Handler struct {
 func NewHandler(
 	processMessageService inbound.ProcessMessagePort,
 	upgrader *websocket.Upgrader,
-	server *socketio.Server,
 	muxWebSocketHelper helper.MuxWebSocketHelper,
 ) *Handler {
 	return &Handler{
-		EchoWebSocketHandler: echo.NewHandler(processMessageService, upgrader, server, muxWebSocketHelper),
-		GinWebSocketHandler:  gin.NewHandler(processMessageService, upgrader, server, muxWebSocketHelper),
+		EchoWebSocketHandler: echo.NewHandler(processMessageService, upgrader, muxWebSocketHelper),
+		GinWebSocketHandler:  gin.NewHandler(processMessageService, upgrader, muxWebSocketHelper),
 	}
 }

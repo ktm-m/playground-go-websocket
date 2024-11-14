@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/websocket"
 	"github.com/ktm-m/playground-go-websocket/constant"
 	"github.com/ktm-m/playground-go-websocket/handler"
@@ -27,12 +26,11 @@ func main() {
 			return appConfig.App.Upgrader.CheckOrigin
 		},
 	}
-	socketIOServer := socketio.NewServer(nil)
 
 	muxWebSocketHelper := helper.NewMuxWebSocketHelper()
 
 	services := service.NewService()
-	handlers := handler.NewHandler(services.ProcessMessageService, &upgrader, socketIOServer, muxWebSocketHelper)
+	handlers := handler.NewHandler(services.ProcessMessageService, &upgrader, muxWebSocketHelper)
 
 	echoServer := echoFactory.CreateServer()
 	registerEchoHandlers(echoServer, handlers)
