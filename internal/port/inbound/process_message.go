@@ -1,5 +1,5 @@
 package inbound
 
 type ProcessMessagePort interface {
-	ProcessMessage(msg string) (string, error)
+	ProcessMessage(msg string, source string) (string, error)
 }

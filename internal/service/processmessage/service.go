@@ -12,7 +12,7 @@ func NewService() inbound.ProcessMessagePort {
 	return &service{}
 }
 
-func (s *service) ProcessMessage(msg string) (string, error) {
-	log.Println("[SERVICE] message received:", msg)
+func (s *service) ProcessMessage(msg string, source string) (string, error) {
+	log.Printf("[SERVICE] message received from %s: %s", source, msg)
 	return msg, nil
 }

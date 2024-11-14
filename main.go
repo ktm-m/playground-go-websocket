@@ -62,8 +62,3 @@ func registerGinHandlers(server infra.HTTPServer, handlers *handler.Handler) {
 	ginWebSocketHandler.RegisterRoutes(server.GetInstance().(*gin.Engine))
 	server.AddHandler(ginWebSocketHandler)
 }
-
-//http.HandleFunc("/chat", func(w http.ResponseWriter, r *http.Request) {
-//	http.ServeFile(w, r, "chat.html")
-//})
-//

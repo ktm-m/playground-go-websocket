@@ -4,59 +4,213 @@
     <meta charset="UTF-8">
     <title>Chat</title>
     <style>
-        #textbox {
-            width: 100%;
-            height: 300px;
-            border: 1px solid black;
-            overflow: auto;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
         }
 
-        #chatform {
-            width: 100%;
+        h1 {
+            text-align: left;
+            color: #333;
+            margin: 0 0 40px 10px;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .chat-group {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: calc(50% - 20px);
+            transition: transform 0.2s;
+        }
+
+        .chat-group:hover {
+            transform: scale(1.02);
+        }
+
+        .chat-group h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .chat-group h4 {
+            margin-bottom: 10px;
+            color: #777;
+            font-size: 1em;
+        }
+
+        .chat-group form {
             display: flex;
             flex-direction: column;
         }
 
-        #chatform div {
-            margin: 5px;
+        .chat-group form div {
+            margin-bottom: 10px;
         }
 
-        #msgbox {
-            width: 100%;
+        .chat-group input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: calc(100% - 22px);
+            font-size: 1em;
+        }
+
+        .chat-group label {
+            font-weight: bold;
+            color: #555;
         }
 
         p {
             margin: 0;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
         }
+
+        #egm-msg-history, #esio-msg-history, #ggm-msg-history, #gsio-msg-history {
+        height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #fafafa;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
     </style>
 </head>
 <body>
-<h1>Chat</h1>
-<div id="textbox"></div>
-<form id="chatform">
-    <div>
-        <label for="msgbox">Message</label>
+<h1>Test Web Socket Chat</h1>
+
+<div class="chat-group">
+    <h3>Echo with Gorilla Mux Web Socket</h3>
+    <h4>Chat History</h4>
+    <div id="egm-msg-history"></div>
+    <form id="egm-msg-form">
+        <div>
+            <label for="egm-msg-box">Message</label>
+        </div>
+        <div>
+            <input name="egm-msg-box" id="egm-msg-box">
+        </div>
+    </form>
+</div>
+
+<div class="chat-group">
+    <h3>Echo with Socket.io Web Socket</h3>
+    <h4>Chat History</h4>
+    <div id="esio-msg-history"></div>
+    <form id="esio-msg-form">
+        <div>
+            <label for="esio-msg-box">Message</label>
+        </div>
+        <div>
+            <input name="esio-msg-box" id="esio-msg-box">
+        </div>
+    </form>
+</div>
+
+<div class="chat-container">
+    <div class="chat-group">
+        <h3>Gin with Gorilla Mux Web Socket</h3>
+        <h4>Chat History</h4>
+        <div id="ggm-msg-history"></div>
+        <form id="ggm-msg-form">
+            <div>
+                <label for="ggm-msg-box">Message</label>
+            </div>
+            <div>
+                <input name="ggm-msg-box" id="ggm-msg-box">
+            </div>
+        </form>
     </div>
-    <div>
-        <input name="msgbox" id="msgbox">
+
+    <div class="chat-group">
+        <h3>Gin with Socket.io Web Socket</h3>
+        <h4>Chat History</h4>
+        <div id="gsio-msg-history"></div>
+        <form id="gsio-msg-form">
+            <div>
+                <label for="gsio-msg-box">Message</label>
+            </div>
+            <div>
+                <input name="gsio-msg-box" id="gsio-msg-box">
+            </div>
+        </form>
     </div>
-</form>
+</div>
+
 <script>
-    let ws = new WebSocket('ws://' + location.host + '/ws');
-    ws.onmessage = function (event) {
-        let textbox = document.querySelector('#textbox');
-        let p = document.createElement('p');
-        p.textContent = event.data;
-        textbox.appendChild(p);
+    const echoMuxWebSocket = new WebSocket('ws://' + location.host + '/echo/gorilla-mux');
+    const echoSocketIOWebSocket = new WebSocket('ws://' + location.host + '/echo/socket-io');
+
+    const ginMuxWebSocket = new WebSocket('ws://' + location.host + '/gin/gorilla-mux');
+    const ginSocketIOWebSocket = new WebSocket('ws://' + location.host + '/gin/socket-io');
+
+    echoMuxWebSocket.onmessage = function (event) {
+        const history = document.querySelector('#egm-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = event.data;
+        history.appendChild(paragraph);
     };
 
-    let chatform = document.querySelector('#chatform');
-    chatform.onsubmit = function (event) {
+    echoSocketIOWebSocket.onmessage = function (event) {
+        const history = document.querySelector('#esio-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = event.data;
+        history.appendChild(paragraph);
+    };
+
+    ginMuxWebSocket.onmessage = function (event) {
+        const history = document.querySelector('#ggm-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = event.data;
+        history.appendChild(paragraph);
+    };
+
+    ginSocketIOWebSocket.onmessage = function (event) {
+        const history = document.querySelector('#gsio-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = event.data;
+        history.appendChild(paragraph);
+    };
+
+    document.querySelector('#egm-msg-form').onsubmit = function (event) {
         event.preventDefault();
-        let msgbox = document.querySelector('#msgbox');
-        ws.send(msgbox.value);
-        msgbox.value = '';
-        return false;
+        const msgBox = document.querySelector('#egm-msg-box');
+        echoMuxWebSocket.send(msgBox.value);
+        msgBox.value = '';
+    };
+
+    document.querySelector('#esio-msg-form').onsubmit = function (event) {
+        event.preventDefault();
+        const msgBox = document.querySelector('#esio-msg-box');
+        echoSocketIOWebSocket.send(msgBox.value);
+        msgBox.value = '';
+    };
+
+    document.querySelector('#ggm-msg-form').onsubmit = function (event) {
+        event.preventDefault();
+        const msgBox = document.querySelector('#ggm-msg-box');
+        ginMuxWebSocket.send(msgBox.value);
+        msgBox.value = '';
+    };
+
+    document.querySelector('#gsio-msg-form').onsubmit = function (event) {
+        event.preventDefault();
+        const msgBox = document.querySelector('#gsio-msg-box');
+        ginSocketIOWebSocket.send(msgBox.value);
+        msgBox.value = '';
     };
 </script>
 </body>
