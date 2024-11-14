@@ -33,6 +33,7 @@ type Log struct {
 type Upgrader struct {
 	ReadBufferSize  int
 	WriteBufferSize int
+	CheckOrigin     bool
 }
 
 func InitConfig() *AppConfig {

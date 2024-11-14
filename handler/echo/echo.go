@@ -94,5 +94,6 @@ func (h *handler) SocketIOWebSocket(c echo.Context) error {
 	})
 
 	h.socketIO.ServeHTTP(c.Response(), c.Request())
+
 	return nil
 }

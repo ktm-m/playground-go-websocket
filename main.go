@@ -24,7 +24,7 @@ func main() {
 		ReadBufferSize:  appConfig.App.Upgrader.ReadBufferSize,
 		WriteBufferSize: appConfig.App.Upgrader.WriteBufferSize,
 		CheckOrigin: func(r *http.Request) bool {
-			return true
+			return appConfig.App.Upgrader.CheckOrigin
 		},
 	}
 	socketIOServer := socketio.NewServer(nil)
