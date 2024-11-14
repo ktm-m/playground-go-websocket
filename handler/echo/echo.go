@@ -16,32 +16,32 @@ var (
 	clients = make(map[*websocket.Conn]struct{})
 )
 
-type echoWebSocketHandler struct {
+type handler struct {
 	processMessageService inbound.ProcessMessagePort
 	upgrader              *websocket.Upgrader
 	socketIO              *socketio.Server
 }
 
-func (h *echoWebSocketHandler) RegisterRoutes(e *echo.Echo) {
+func (h *handler) RegisterRoutes(e *echo.Echo) {
 	group := e.Group("/echo")
 	group.GET("/html", h.ServeHTML)
-	group.GET("/gorilla-mux", h.EchoGorillaMuxWebSocket)
-	group.GET("/socket-io", h.EchoSocketIOWebSocket)
+	group.GET("/gorilla-mux", h.GorillaMuxWebSocket)
+	group.GET("/socket-io", h.SocketIOWebSocket)
 }
 
-func NewEchoWebSocketHandler(processMessageService inbound.ProcessMessagePort, upgrader *websocket.Upgrader, socketIO *socketio.Server) outbound.EchoWebSocketHandlerPort {
-	return &echoWebSocketHandler{
+func NewHandler(processMessageService inbound.ProcessMessagePort, upgrader *websocket.Upgrader, socketIO *socketio.Server) outbound.EchoWebSocketHandlerPort {
+	return &handler{
 		processMessageService: processMessageService,
 		upgrader:              upgrader,
 		socketIO:              socketIO,
 	}
 }
 
-func (h *echoWebSocketHandler) ServeHTML(c echo.Context) error {
+func (h *handler) ServeHTML(c echo.Context) error {
 	return c.File("./html/chat.html")
 }
 
-func (h *echoWebSocketHandler) EchoGorillaMuxWebSocket(c echo.Context) error {
+func (h *handler) GorillaMuxWebSocket(c echo.Context) error {
 	conn, err := h.upgradeConnection(h.upgrader, c)
 	if err != nil {
 		log.Println("[HANDLER] failed to upgrade connection:", err)
@@ -73,7 +73,7 @@ func (h *echoWebSocketHandler) EchoGorillaMuxWebSocket(c echo.Context) error {
 	}
 }
 
-func (h *echoWebSocketHandler) EchoSocketIOWebSocket(c echo.Context) error {
+func (h *handler) SocketIOWebSocket(c echo.Context) error {
 	h.socketIO.OnEvent("/", "message", func(conn socketio.Conn, msg string) {
 		resp, err := h.processMessageService.ProcessMessage(msg, constant.EchoServer)
 		if err != nil {
@@ -82,14 +82,14 @@ func (h *echoWebSocketHandler) EchoSocketIOWebSocket(c echo.Context) error {
 			return
 		}
 
-		conn.Emit("response", resp)
+		conn.Emit("message", resp)
 	})
 
 	h.socketIO.ServeHTTP(c.Response(), c.Request())
 	return nil
 }
 
-func (h *echoWebSocketHandler) upgradeConnection(upgrader *websocket.Upgrader, c echo.Context) (*websocket.Conn, error) {
+func (h *handler) upgradeConnection(upgrader *websocket.Upgrader, c echo.Context) (*websocket.Conn, error) {
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		log.Println("[HANDLER] failed to upgrade connection:", err)
@@ -99,21 +99,21 @@ func (h *echoWebSocketHandler) upgradeConnection(upgrader *websocket.Upgrader, c
 	return conn, nil
 }
 
-func (h *echoWebSocketHandler) addClient(conn *websocket.Conn) {
+func (h *handler) addClient(conn *websocket.Conn) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	clients[conn] = struct{}{}
 }
 
-func (h *echoWebSocketHandler) removeClient(conn *websocket.Conn) {
+func (h *handler) removeClient(conn *websocket.Conn) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	delete(clients, conn)
 }
 
-func (h *echoWebSocketHandler) broadcastMessage(msg []byte, clients map[*websocket.Conn]struct{}) {
+func (h *handler) broadcastMessage(msg []byte, clients map[*websocket.Conn]struct{}) {
 	mu.Lock()
 	defer mu.Unlock()
 

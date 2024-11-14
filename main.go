@@ -9,6 +9,7 @@ import (
 	"github.com/ktm-m/playground-go-websocket/infra"
 	"github.com/ktm-m/playground-go-websocket/internal/service"
 	"github.com/labstack/echo/v4"
+	"net/http"
 	"sync"
 )
 
@@ -21,6 +22,9 @@ func main() {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  appConfig.App.Upgrader.ReadBufferSize,
 		WriteBufferSize: appConfig.App.Upgrader.WriteBufferSize,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 	socketIOServer := socketio.NewServer(nil)
 

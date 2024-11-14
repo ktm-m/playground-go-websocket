@@ -20,7 +20,7 @@ func NewHandler(
 	server *socketio.Server,
 ) *Handler {
 	return &Handler{
-		EchoWebSocketHandler: echo.NewEchoWebSocketHandler(processMessageService, upgrader, server),
-		GinWebSocketHandler:  gin.NewGinWebSocketHandler(processMessageService, upgrader, server),
+		EchoWebSocketHandler: echo.NewHandler(processMessageService, upgrader, server),
+		GinWebSocketHandler:  gin.NewHandler(processMessageService, upgrader, server),
 	}
 }

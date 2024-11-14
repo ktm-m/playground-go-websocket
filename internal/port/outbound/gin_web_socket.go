@@ -6,6 +6,6 @@ import (
 
 type GinWebSocketHandlerPort interface {
 	RegisterRoutes(e *gin.Engine)
-	GinGorillaMuxWebSocket(c *gin.Context)
-	GinSocketIOWebSocket(c *gin.Context)
+	GorillaMuxWebSocket(c *gin.Context)
+	SocketIOWebSocket(c *gin.Context)
 }

@@ -79,14 +79,14 @@
         }
 
         #egm-msg-history, #esio-msg-history, #ggm-msg-history, #gsio-msg-history {
-        height: 200px;
-        overflow-y: auto;
-        border: 1px solid #ccc;
-        padding: 10px;
-        background-color: #fafafa;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fafafa;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -151,16 +151,30 @@
 </div>
 
 <script>
-    const echoMuxWebSocket = new WebSocket('ws://' + location.host + '/echo/gorilla-mux');
-    const echoSocketIOWebSocket = new WebSocket('ws://' + location.host + '/echo/socket-io');
+    const echoMuxWebSocket = new WebSocket('ws://' + "localhost:8081" + '/echo/gorilla-mux');
+    const echoSocketIOWebSocket = new WebSocket('ws://' + "localhost:8081" + '/echo/socket-io');
 
-    const ginMuxWebSocket = new WebSocket('ws://' + location.host + '/gin/gorilla-mux');
-    const ginSocketIOWebSocket = new WebSocket('ws://' + location.host + '/gin/socket-io');
+    const ginMuxWebSocket = new WebSocket('ws://' + "localhost:8082" + '/gin/gorilla-mux');
+    const ginSocketIOWebSocket = new WebSocket('ws://' + "localhost:8082" + '/gin/socket-io');
+
+    echoMuxWebSocket.onopen = function () {
+        const history = document.querySelector('#egm-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = "connected to server";
+        history.appendChild(paragraph);
+    };
 
     echoMuxWebSocket.onmessage = function (event) {
         const history = document.querySelector('#egm-msg-history');
         const paragraph = document.createElement('p');
         paragraph.textContent = event.data;
+        history.appendChild(paragraph);
+    };
+
+    echoSocketIOWebSocket.onopen = function () {
+        const history = document.querySelector('#esio-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = "connected to server";
         history.appendChild(paragraph);
     };
 
@@ -171,10 +185,24 @@
         history.appendChild(paragraph);
     };
 
+    ginMuxWebSocket.onopen = function () {
+        const history = document.querySelector('#ggm-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = "connected to server";
+        history.appendChild(paragraph);
+    };
+
     ginMuxWebSocket.onmessage = function (event) {
         const history = document.querySelector('#ggm-msg-history');
         const paragraph = document.createElement('p');
         paragraph.textContent = event.data;
+        history.appendChild(paragraph);
+    };
+
+    ginSocketIOWebSocket.onopen = function () {
+        const history = document.querySelector('#gsio-msg-history');
+        const paragraph = document.createElement('p');
+        paragraph.textContent = "connected to server";
         history.appendChild(paragraph);
     };
 
