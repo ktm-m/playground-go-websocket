@@ -62,3 +62,8 @@ Run the following commands:
 ```bash
 make stop-build
 ```
+## How to use this project
+
+Open your browser and go to the following URLs:
+
+- [http://localhost:8081/echo/html](http://localhost:8081/echo/html)
