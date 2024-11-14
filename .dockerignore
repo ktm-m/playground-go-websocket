@@ -1,0 +1,40 @@
+# Binaries
+main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Output of the build
+/build
+/bin
+
+# Temporary files
+*.tmp
+*.log
+
+# Dependency directories
+vendor/
+
+# Go specific
+*.test
+*.out
+*.prof
+*.cover
+
+# IDE specific
+.idea/
+.vscode/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Docker specific
+Dockerfile
+docker-compose.yml
+
+# Ensure the config directory and .env file are not ignored
+!config/
+!.env
